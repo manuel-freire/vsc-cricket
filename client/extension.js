@@ -6,7 +6,12 @@ const vscode = require('vscode');
 
 
 // see https://code.visualstudio.com/api/references/vscode-api#StatusBarItem
-let statusBarItem;
+let statusBarItem
+let totalUpdates = 0
+let lastSave = new Date()
+
+const baseUrl = "http://localhost:5000"
+const minSecondsBetweenUpdates = 10
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -28,43 +33,67 @@ function activate(context) {
 	
 	// from https://github.com/microsoft/vscode-extension-samples/blob/main/statusbar-sample/src/extension.ts
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);	
-	let lineCounter = vscode.commands.registerCommand('cricket.showSelectionCount', () => {
-		const n = getNumberOfSelectedLines(vscode.window.activeTextEditor);
-		vscode.window.showInformationMessage(`Yeah, ${n} line(s) selected... Keep going!`);
-	});
 
-	context.subscriptions.push(infoMsg, warningMsg, lineCounter,
+	context.subscriptions.push(infoMsg, warningMsg, 
+		vscode.workspace.onDidSaveTextDocument(updateStatusBarItem));
+	updateStatusBarItem();
+}
+
+	/*
+		other triggers
 		// change of text editor
 		vscode.window.onDidChangeActiveTextEditor(updateStatusBarItem),
 		// change of selection in active editor
 		vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem)
-	);
-	updateStatusBarItem();
-}
+	*/
 
-function updateStatusBarItem() {
-	const n = getNumberOfSelectedLines(vscode.window.activeTextEditor);
-	if (n > 0) {
-		statusBarItem.text = `$(megaphone) ${n} line(s) selected`;
-		statusBarItem.show();
-		if (n > 4) {
-			testSend()
-		}
-	} else {
-		statusBarItem.hide();		
+
+function updateStatusBarItem(textEvent) {
+	console.log("update!")
+
+	if ( ! textEvent) {
+		statusBarItem.hide()
+		return
 	}
-}
 
-function getNumberOfSelectedLines(editor) {
-	let lines = 0;
-	if (editor) {
-		lines = editor.selections.reduce((prev, curr) => prev + (curr.end.line - curr.start.line), 0);
+	const secondsSinceLastSuccess = 
+		((new Date()).getTime() - lastSave.getTime())/1000;
+	
+	if (secondsSinceLastSuccess < minSecondsBetweenUpdates) {
+		console.log(`not spamming: ${secondsSinceLastSuccess} < ${minSecondsBetweenUpdates}`)
+		return;
 	}
-	return lines;
+
+	post(vscode.window.activeTextEditor.document.getText())
 }
 
-function testSend() {
-	fetch("http://localhost/")
+function post(code) {
+	const url = `${baseUrl}/log`
+
+	const opts = {
+		method: 'POST',
+  		headers: {
+    		'Accept': 'application/json, text/plain, */*',
+    		'Content-Type': 'application/json'
+  		},
+		body: JSON.stringify({id:42, code})
+	}
+
+	console.log("post-fetch to ", url)
+	fetch(url, opts)
+		.then(d => {
+			lastSave = new Date()
+			statusBarItem.text = `$(megaphone) OK ${totalUpdates++}`
+			statusBarItem.show();
+		})
+		.then(undefined, err => {
+			console.error('strange API error', err);
+		 })
+		.catch(e => {
+			console.log('fetch error', e)
+			statusBarItem.text = `$(megaphone) ERR ${totalUpdates}`
+			statusBarItem.show();
+		})
 }
 
 // This method is called when your extension is deactivated

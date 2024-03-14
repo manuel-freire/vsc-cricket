@@ -23,12 +23,16 @@ def list_all_logs():
 
 @app.post("/log")
 def post_received():
-    ts = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
     json = request.get_json(force=True)
+    
+    ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    id = json['id']
+    code = json['code']
+    
     log_name = f"{ts}_{id}"
-    with open(f"{log_name}.json", 'w') as json_f:
-        json_f.write(json)
+    with open(f"{LOG_DIR}/{log_name}.cpp", 'w') as json_f:
+        json_f.write(code)
 
-    print(f"logging {log_name} - {len[str(json)]} bytes")
+    print(f"logging {log_name} - {len(code)} chars")
     return "<p>Hello, World!</p>"
 
