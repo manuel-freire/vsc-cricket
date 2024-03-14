@@ -1,8 +1,13 @@
 {
   "name": "cricket",
   "displayName": "cricket",
-  "description": "An extension that regularly uploads contents of VSC buffers to a server. To be used to gain insight into how students learn to program.",
+  "description": "An extension that regularly uploads contents of VSC c++ files to a server. To be used to gain insight into how students program.",
   "version": "0.0.1",
+  "publisher": "e-UCM",
+  "author": {
+    "name": "Manuel Freire",
+    "e-mail": "manuel.freire@fdi.ucm.es"
+  },
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -10,20 +15,12 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:**/*.cpp"
+    "workspaceContains:**/*.cpp",
+    "workspaceContains:**/*.h"
   ],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "cricket.showInfo",
-      "title": "Hello World2"
-    },{
-      "command": "cricket.showWarning",
-      "title": "Hello World1"
-    },{
-      "command": "cricket.showSelectionCount",
-      "title": "Hello World3"
-    }]
+    "commands": []
   },
   "scripts": {
     "lint": "eslint .",
@@ -38,5 +35,11 @@
     "typescript": "^5.3.3",
     "@vscode/test-cli": "^0.0.6",
     "@vscode/test-electron": "^2.3.9"
-  }
+  },
+  "license": "see LICENSE file",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manuel-freire/vsc_cricket.git"
+  },
+  "homepage": "https://github.com/manuel-freire/vsc_cricket"
 }

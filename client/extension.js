@@ -8,10 +8,13 @@ const vscode = require('vscode');
 // see https://code.visualstudio.com/api/references/vscode-api#StatusBarItem
 let statusBarItem
 let totalUpdates = 0
-let lastSave = new Date()
+let lastPost = new Date()
+let lastError = new Date()
 
-const baseUrl = "http://localhost:5000"
-const minSecondsBetweenUpdates = 10
+// avoids hammering a server with updates
+const minSecondsBetweenUpdates = 120
+// avoids hammering an un-responding server
+const minSecondsBetweenErrors = 30
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -19,34 +22,14 @@ const minSecondsBetweenUpdates = 10
 function activate(context) {
 
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "cricket" is now active!');
+	console.log('Congratulations, extension "cricket" is now active!');
 
-	// The command has been defined in the package.json file
-	let infoMsg = vscode.commands.registerCommand('cricket.showInfo', function () {
-		vscode.window.showInformationMessage('Hello World from cricket!');
-	});
-
-	let warningMsg = vscode.commands.registerCommand('cricket.showWarning', () => {
-		vscode.window.showWarningMessage('Warning Notification');
-	});
-
-	
-	// from https://github.com/microsoft/vscode-extension-samples/blob/main/statusbar-sample/src/extension.ts
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);	
 
-	context.subscriptions.push(infoMsg, warningMsg, 
+	context.subscriptions.push(
 		vscode.workspace.onDidSaveTextDocument(updateStatusBarItem));
 	updateStatusBarItem();
 }
-
-	/*
-		other triggers
-		// change of text editor
-		vscode.window.onDidChangeActiveTextEditor(updateStatusBarItem),
-		// change of selection in active editor
-		vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem)
-	*/
-
 
 function updateStatusBarItem(textEvent) {
 	console.log("update!")
@@ -56,18 +39,33 @@ function updateStatusBarItem(textEvent) {
 		return
 	}
 
-	const secondsSinceLastSuccess = 
-		((new Date()).getTime() - lastSave.getTime())/1000;
-	
-	if (secondsSinceLastSuccess < minSecondsBetweenUpdates) {
-		console.log(`not spamming: ${secondsSinceLastSuccess} < ${minSecondsBetweenUpdates}`)
+	const secondsSinceLastPost =
+		((new Date()).getTime() - lastPost.getTime())/1000;
+	const secondsSinceLastError = 
+		((new Date()).getTime() - lastError.getTime())/1000;		
+
+	if ((secondsSinceLastPost < minSecondsBetweenUpdates) ||
+		(secondsSinceLastError < minSecondsBetweenErrors)) {
+		console.log(`not spamming: ${secondsSinceLastPost} since last ok, ${secondsSinceLastError} since last error`)
 		return;
 	}
 
-	post(vscode.window.activeTextEditor.document.getText())
+	const doc = vscode.window.activeTextEditor.document
+	const code = doc.getText()
+	const urlMatch = code.match(/^\/\/ cricket-url: (.*)$/m)
+	const idMatch = code.match(/^\/\/ cricket-id: (.*)$/m)
+	if ( ! urlMatch || ! idMatch) {
+		console.log(`not cricket-enabled`)
+		statusBarItem.hide()
+		return;
+	}
+	const url = urlMatch[1].trim()
+	const id = idMatch[1].trim()
+
+	post(url, id, doc.fileName, code)
 }
 
-function post(code) {
+function post(baseUrl, id, filename, code) {
 	const url = `${baseUrl}/log`
 
 	const opts = {
@@ -76,21 +74,19 @@ function post(code) {
     		'Accept': 'application/json, text/plain, */*',
     		'Content-Type': 'application/json'
   		},
-		body: JSON.stringify({id:42, code})
+		body: JSON.stringify({id, filename, code})
 	}
 
-	console.log("post-fetch to ", url)
+	console.log(`post-fetch to ${url} with ${id} ${filename}: ${code.length} chars`)
 	fetch(url, opts)
 		.then(d => {
-			lastSave = new Date()
-			statusBarItem.text = `$(megaphone) OK ${totalUpdates++}`
+			lastPost = new Date()
+			statusBarItem.text = `$(megaphone) OK ${++totalUpdates}`
 			statusBarItem.show();
 		})
 		.then(undefined, err => {
-			console.error('strange API error', err);
-		 })
-		.catch(e => {
-			console.log('fetch error', e)
+			lastError = new Date()
+			console.log('fetch error', err)
 			statusBarItem.text = `$(megaphone) ERR ${totalUpdates}`
 			statusBarItem.show();
 		})

@@ -1,65 +1,35 @@
-# cricket README
+# cricket client README
 
-This is the README for your extension "cricket". After writing up a brief description, we recommend including the following sections.
+An extension that regularly uploads contents of VSC c++ files to a server. To be used to gain insight into how students program.
+
+## Installation
+
+This extension has not been uploaded to any online extension repository (excluding this source repository). To install, use
+
+~~~
+    vsce package
+~~~
+
+from a command-line to create a `.vsix` package, and install that package via
+
+~~~
+    code --install-extension cricket-0.0.1.vsix
+~~~
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+The extension activates itself if it detects either .h or .cpp files in the current workspace.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Whenever a workspace file is saved, the extension reads its source to look for comments that start with `// cricket-url: ` and `// cricket-id: `. If these comments are found, and no traces had been sent for more than a specified time interval, it will send the contents of the file to the value of _cricket-url_, including _cricket-id_ as an identifier. It will also send the current filename.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+No special requirements 
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+No settings. Everything either from comments (see above) or hard-coded.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+None yet.
